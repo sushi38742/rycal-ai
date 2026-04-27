@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const GEMINI_PROMPT = 'You are a precise nutrition analyst. Analyze the food in this image and return ONLY a valid JSON object — no markdown fences, no explanation, just raw JSON.\n\nIdentify the food as specifically as possible. Estimate the portion size based on what is visible.\n\nReturn exactly this JSON structure:\n{\n  "foodName": "specific name",\n  "brand": null,\n  "servingDescription": "e.g. 1 medium breast (~170g)",\n  "isBranded": false,\n  "confidence": "high",\n  "calories": 284,\n  "protein": 53,\n  "carbs": 0,\n  "fat": 6,\n  "calorieSources": "USDA standard reference values",\n  "proteinSources": "USDA standard reference values",\n  "carbsSources": "USDA standard reference values",\n  "fatSources": "USDA standard reference values",\n  "notes": ""\n}\n\nRULES:\n- isBranded = true ONLY for specific packaged commercial products with a visible brand\n- confidence: high = very confident | medium = reasonable ID, portion uncertain | low = unclear\n- Source strings must explain WHERE each number came from\n- calories must approximately equal (protein x 4) + (carbs x 4) + (fat x 9)\n- All macro values must be non-negative integers\n- If you cannot identify the food, set confidence to low and make your best conservative guess';
+const GEMINI_PROMPT = 'You are a precise nutrition analyst. Analyze the food in this image and return ONLY a valid JSON object â no markdown fences, no explanation, just raw JSON.\n\nIdentify the food as specifically as possible. Estimate the portion size based on what is visible.\n\nReturn exactly this JSON structure:\n{\n  "foodName": "specific name",\n  "brand": null,\n  "servingDescription": "e.g. 1 medium breast (~170g)",\n  "isBranded": false,\n  "confidence": "high",\n  "calories": 284,\n  "protein": 53,\n  "carbs": 0,\n  "fat": 6,\n  "calorieSources": "USDA standard reference values",\n  "proteinSources": "USDA standard reference values",\n  "carbsSources": "USDA standard reference values",\n  "fatSources": "USDA standard reference values",\n  "notes": ""\n}\n\nRULES:\n- isBranded = true ONLY for specific packaged commercial products with a visible brand\n- confidence: high = very confident | medium = reasonable ID, portion uncertain | low = unclear\n- Source strings must explain WHERE each number came from\n- calories must approximately equal (protein x 4) + (carbs x 4) + (fat x 9)\n- All macro values must be non-negative integers\n- If you cannot identify the food, set confidence to low and make your best conservative guess';
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
     const imageParts = images.map((b64: string) => ({
       inlineData: { data: b64.replace(/^data:image\/\w+;base64,/, ''), mimeType: 'image/jpeg' as const },
@@ -68,10 +68,10 @@ export async function POST(request: NextRequest) {
       isBranded: gemini.isBranded, confidence: 'high' as const,
       calories: nutritionixData.calories, protein: nutritionixData.protein, carbs: nutritionixData.carbs, fat: nutritionixData.fat,
       sources: {
-        calories: 'Nutritionix database match for "' + nutritionixData.foodName + '" — ' + nutritionixData.calories + ' kcal',
-        protein:  'Nutritionix database match for "' + nutritionixData.foodName + '" — ' + nutritionixData.protein + 'g protein',
-        carbs:    'Nutritionix database match for "' + nutritionixData.foodName + '" — ' + nutritionixData.carbs + 'g carbs',
-        fat:      'Nutritionix database match for "' + nutritionixData.foodName + '" — ' + nutritionixData.fat + 'g fat',
+        calories: 'Nutritionix database match for "' + nutritionixData.foodName + '" â ' + nutritionixData.calories + ' kcal',
+        protein:  'Nutritionix database match for "' + nutritionixData.foodName + '" â ' + nutritionixData.protein + 'g protein',
+        carbs:    'Nutritionix database match for "' + nutritionixData.foodName + '" â ' + nutritionixData.carbs + 'g carbs',
+        fat:      'Nutritionix database match for "' + nutritionixData.foodName + '" â ' + nutritionixData.fat + 'g fat',
       },
       notes: 'Visual ID by Gemini AI. Nutrition from Nutritionix verified database.',
     } : {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
         carbs:    gemini.carbsSources   || sourceTag + ' for ' + gemini.foodName,
         fat:      gemini.fatSources     || sourceTag + ' for ' + gemini.foodName,
       },
-      notes: gemini.notes || (gemini.confidence === 'low' ? 'Conservative estimate — photo was unclear. Consider retaking.' : ''),
+      notes: gemini.notes || (gemini.confidence === 'low' ? 'Conservative estimate â photo was unclear. Consider retaking.' : ''),
     };
 
     return NextResponse.json({ success: true, result: finalResult });
